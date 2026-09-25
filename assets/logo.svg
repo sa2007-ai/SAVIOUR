@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" fill="none">
+  <defs>
+    <linearGradient id="shieldGrad" x1="10" y1="10" x2="110" y2="110" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#3B82F6"/>
+      <stop offset="50%" stop-color="#1D4ED8"/>
+      <stop offset="100%" stop-color="#0F172A"/>
+    </linearGradient>
+    <linearGradient id="goldGrad" x1="30" y1="30" x2="90" y2="90" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FDE047"/>
+      <stop offset="100%" stop-color="#F59E0B"/>
+    </linearGradient>
+    <linearGradient id="glowGrad" x1="60" y1="20" x2="60" y2="100" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#60A5FA" stop-opacity="0.8"/>
+      <stop offset="100%" stop-color="#2563EB" stop-opacity="0.2"/>
+    </linearGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="130%" height="130%">
+      <feDropShadow dx="0" dy="6" stdDeviation="6" flood-color="#1E3A8A" flood-opacity="0.35"/>
+    </filter>
+  </defs>
+
+  <!-- Outer Shield Contour with Shadow -->
+  <path d="M60 12 C85 12, 104 22, 104 42 C104 74, 76 98, 60 108 C44 98, 16 74, 16 42 C16 22, 35 12, 60 12 Z" 
+        fill="url(#shieldGrad)" filter="url(#shadow)" stroke="#60A5FA" stroke-width="2.5" stroke-linejoin="round"/>
+  
+  <!-- Inner Subtle Glow Ridge -->
+  <path d="M60 20 C80 20, 96 28, 96 44 C96 70, 72 90, 60 98 C48 90, 24 70, 24 44 C24 28, 40 20, 60 20 Z" 
+        fill="url(#glowGrad)" stroke="rgba(255,255,255,0.2)" stroke-width="1.5"/>
+
+  <!-- Center Pin & Safety Beacon Mark -->
+  <circle cx="60" cy="46" r="14" fill="url(#goldGrad)"/>
+  <circle cx="60" cy="46" r="6" fill="#0F172A"/>
+
+  <!-- Helping Hand / Protective Arc -->
+  <path d="M42 66 C42 66, 52 58, 60 58 C68 58, 78 66, 78 66 C78 66, 70 80, 60 84 C50 80, 42 66, 42 66 Z" 
+        fill="#FFFFFF" fill-opacity="0.95"/>
+  
+  <!-- Mini Search / Target Accent -->
+  <circle cx="60" cy="46" r="22" stroke="url(#goldGrad)" stroke-width="1.5" stroke-dasharray="3 3" opacity="0.85"/>
+</svg>

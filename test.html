@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>SAVIOUR — Automated Test Runner</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0f172a; color: #f8fafc; padding: 24px; }
+    .test-log { background: #1e293b; padding: 16px; border-radius: 8px; border: 1px solid #334155; font-family: monospace; font-size: 13px; line-height: 1.6; white-space: pre-wrap; }
+    .pass { color: #34d399; }
+    .fail { color: #f87171; font-weight: bold; }
+    .header { color: #60a5fa; font-weight: bold; }
+    .btn { background: #2563eb; color: white; padding: 8px 16px; border: none; border-radius: 6px; cursor: pointer; text-decoration: none; display: inline-block; margin-bottom: 16px; }
+  </style>
+</head>
+<body>
+  <h2>🛡️ SAVIOUR Automated Test Suite Execution</h2>
+  <a href="./index.html" class="btn">&larr; Open SAVIOUR Application</a>
+  <div id="output" class="test-log">Running tests...</div>
+
+  <script type="module">
+    const output = document.getElementById('output');
+    output.innerHTML = '';
+
+    const originalLog = console.log;
+    const originalError = console.error;
+
+    console.log = function(...args) {
+      originalLog.apply(console, args);
+      const text = args.join(' ');
+      if (text.includes('[PASS]')) {
+        output.innerHTML += `<span class="pass">${text}</span>\n`;
+      } else if (text.startsWith('---') || text.startsWith('===')) {
+        output.innerHTML += `<span class="header">${text}</span>\n`;
+      } else {
+        output.innerHTML += `${text}\n`;
+      }
+    };
+
+    console.error = function(...args) {
+      originalError.apply(console, args);
+      output.innerHTML += `<span class="fail">${args.join(' ')}</span>\n`;
+    };
+
+    import('./test-suite.js');
+  </script>
+</body>
+</html>

@@ -1,0 +1,45 @@
+# ── SAVIOUR — .gitignore ────────────────────────────────────────────
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# Editor / IDE
+.vscode/
+.idea/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+*.swp
+*.swo
+*~
+
+# Node (if ever added)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+package-lock.json
+yarn.lock
+dist/
+build/
+.cache/
+
+# Environment / secrets
+.env
+.env.local
+.env.*.local
+
+# PowerShell logs / temp
+*.log
+*.tmp
+
+# Browser test artifacts
+/coverage/

@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>SAVIOUR — Smart Campus Assistance Platform | Find. Report. Get Help.</title>
+  <meta name="description" content="Centralized smart campus assistance platform for finding lost belongings, reporting campus issues, and instant emergency response.">
+  <link rel="icon" type="image/svg+xml" href="./assets/logo.svg">
+
+  <!-- Google Fonts: Plus Jakarta Sans -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Three.js CDN for Level 3 3D WebGL Shield & Particle Animation -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+  <!-- CSS Stylesheets -->
+  <link rel="stylesheet" href="./css/design-tokens.css">
+  <link rel="stylesheet" href="./css/main.css">
+  <link rel="stylesheet" href="./css/components.css">
+  <link rel="stylesheet" href="./css/animations.css">
+  <link rel="stylesheet" href="./css/admin.css">
+</head>
+<body>
+
+  <!-- Outer Desktop Frame Container with Ambient Glows -->
+  <div id="desktop-viewport-container">
+    <div class="ambient-glow ambient-glow-1"></div>
+    <div class="ambient-glow ambient-glow-2"></div>
+
+    <!-- Responsive Desktop Device View Switcher -->
+    <div class="device-toggle-bar">
+      <button id="btn-toggle-device-view" class="device-toggle-btn">
+        💻 Switch to Wide View
+      </button>
+      <a href="./3d-model.html" class="device-toggle-btn" style="text-decoration:none;" title="View 3D Interactive Model">
+        🌐 3D Model
+      </a>
+      <button id="btn-toggle-theme" class="device-toggle-btn" title="Toggle Light / Dark Mode">
+        🌙
+      </button>
+    </div>
+
+
+    <!-- Mobile Device Shell Mockup (Target: 360-430px) -->
+    <div id="mobile-device-wrapper">
+      
+      <!-- Top Mobile Status Bar (Time & Signal Icons) -->
+      <div class="mobile-status-bar">
+        <span id="status-time-display" class="status-bar-time">9:41 AM</span>
+        <div class="status-bar-icons">
+          <span>5G</span>
+          <span>📶</span>
+          <span>🔋 100%</span>
+        </div>
+      </div>
+
+      <!-- App Top Navigation Header (Visible when logged in) -->
+      <header id="app-top-header" class="app-top-header" style="display: none;">
+        <a href="#" class="header-brand" onclick="window.saviourApp && window.saviourApp.switchStudentTab('home'); return false;">
+          <img src="./assets/logo.svg" alt="SAVIOUR Logo">
+          <span>SAVIOUR</span>
+        </a>
+        <div class="header-actions">
+          <button id="btn-header-notifications" class="header-btn" title="Notifications">
+            🔔
+            <span id="header-notif-dot" class="notification-badge-dot" style="display: none;"></span>
+          </button>
+        </div>
+      </header>
+
+      <!-- Main Scrollable App Content View -->
+      <main id="app-main-content" class="app-content-scroll"></main>
+
+      <!-- Fixed Bottom Navigation Bar -->
+      <nav id="app-bottom-nav" class="bottom-nav-bar" style="display: none;"></nav>
+
+    </div>
+
+    <!-- Toast Alert Notifications Container -->
+    <div id="toast-container" class="toast-container"></div>
+  </div>
+
+  <!-- JavaScript Module App Entry -->
+  <script type="module" src="./js/app.js"></script>
+
+</body>
+</html>
