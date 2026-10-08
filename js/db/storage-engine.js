@@ -18,7 +18,16 @@ class StorageEngine {
   constructor() {
     this.prefix = 'saviour_app_';
     this.listeners = new Map();
+    this._memStore = new Map();
     this.init();
+  }
+
+  get isStorageAvailable() {
+    try {
+      return typeof window !== 'undefined' && 'localStorage' in window && window.localStorage !== null;
+    } catch (e) {
+      return false;
+    }
   }
 
   init() {
@@ -48,17 +57,25 @@ class StorageEngine {
 
   getRaw(key) {
     try {
-      const data = localStorage.getItem(this.prefix + key);
-      return data ? JSON.parse(data) : null;
+      if (this.isStorageAvailable) {
+        const data = localStorage.getItem(this.prefix + key);
+        return data ? JSON.parse(data) : null;
+      } else {
+        return this._memStore.has(this.prefix + key) ? JSON.parse(this._memStore.get(this.prefix + key)) : null;
+      }
     } catch (e) {
-      console.error('Storage get error:', e);
       return null;
     }
   }
 
   setRaw(key, val) {
     try {
-      localStorage.setItem(this.prefix + key, JSON.stringify(val));
+      const serialized = JSON.stringify(val);
+      if (this.isStorageAvailable) {
+        localStorage.setItem(this.prefix + key, serialized);
+      } else {
+        this._memStore.set(this.prefix + key, serialized);
+      }
       this.emit(key, val);
     } catch (e) {
       console.error('Storage set error:', e);

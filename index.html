@@ -29,33 +29,11 @@
     <div class="ambient-glow ambient-glow-1"></div>
     <div class="ambient-glow ambient-glow-2"></div>
 
-    <!-- Responsive Desktop Device View Switcher -->
-    <div class="device-toggle-bar">
-      <button id="btn-toggle-device-view" class="device-toggle-btn">
-        💻 Switch to Wide View
-      </button>
-      <a href="./3d-model.html" class="device-toggle-btn" style="text-decoration:none;" title="View 3D Interactive Model">
-        🌐 3D Model
-      </a>
-      <button id="btn-toggle-theme" class="device-toggle-btn" title="Toggle Light / Dark Mode">
-        🌙
-      </button>
-    </div>
-
-
     <!-- Mobile Device Shell Mockup (Target: 360-430px) -->
     <div id="mobile-device-wrapper">
       
-      <!-- Top Mobile Status Bar (Time & Signal Icons) -->
-      <div class="mobile-status-bar">
-        <span id="status-time-display" class="status-bar-time">9:41 AM</span>
-        <div class="status-bar-icons">
-          <span>5G</span>
-          <span>📶</span>
-          <span>🔋 100%</span>
-        </div>
-      </div>
-
+      
+     
       <!-- App Top Navigation Header (Visible when logged in) -->
       <header id="app-top-header" class="app-top-header" style="display: none;">
         <a href="#" class="header-brand" onclick="window.saviourApp && window.saviourApp.switchStudentTab('home'); return false;">
@@ -63,7 +41,10 @@
           <span>SAVIOUR</span>
         </a>
         <div class="header-actions">
-          <button id="btn-header-notifications" class="header-btn" title="Notifications">
+          <button id="btn-toggle-theme" class="header-btn" title="Toggle Night / Day Mode" aria-label="Toggle Night / Day Mode">
+            🌙
+          </button>
+          <button id="btn-header-notifications" class="header-btn" title="Notifications" aria-label="Notifications">
             🔔
             <span id="header-notif-dot" class="notification-badge-dot" style="display: none;"></span>
           </button>

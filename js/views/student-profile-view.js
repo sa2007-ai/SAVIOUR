@@ -90,7 +90,24 @@ export class StudentProfileView {
           </div>
         </div>
 
-        <!-- 4. Account & Security (Change Password & Logout) -->
+        <!-- 4. Appearance & Theme Settings -->
+        <div class="theme-switch-card">
+          <div class="theme-switch-info">
+            <div class="theme-switch-icon" id="theme-switch-icon-indicator">
+              ${this.app.currentTheme === 'dark' ? '🌙' : '☀️'}
+            </div>
+            <div>
+              <div class="theme-switch-label">Theme & Appearance</div>
+              <div class="theme-switch-sub theme-current-label">${this.app.currentTheme === 'dark' ? 'Night Mode (Dark)' : 'Day Mode (Light)'}</div>
+            </div>
+          </div>
+          <label class="switch-toggle" title="Toggle Night / Day Mode">
+            <input type="checkbox" id="student-theme-toggle" class="theme-toggle-checkbox" ${this.app.currentTheme === 'dark' ? 'checked' : ''}>
+            <span class="switch-slider"></span>
+          </label>
+        </div>
+
+        <!-- 5. Account & Security (Change Password & Logout) -->
         <div class="card" style="padding: 16px; margin-bottom: 20px;">
           <h4 style="font-size: 13.5px; font-weight: 700; color: var(--text-primary); margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.4px;">
             Account Security
@@ -124,6 +141,20 @@ export class StudentProfileView {
   }
 
   bindEvents(container, user) {
+    // Theme toggle switch
+    const themeToggle = container.querySelector('#student-theme-toggle');
+    const themeIcon = container.querySelector('#theme-switch-icon-indicator');
+    const themeLabel = container.querySelector('.theme-current-label');
+
+    if (themeToggle) {
+      themeToggle.onchange = () => {
+        this.app.toggleTheme();
+        const isDark = this.app.currentTheme === 'dark';
+        if (themeIcon) themeIcon.textContent = isDark ? '🌙' : '☀️';
+        if (themeLabel) themeLabel.textContent = isDark ? 'Night Mode (Dark)' : 'Day Mode (Light)';
+      };
+    }
+
     // Avatar upload trigger
     const avatarInput = container.querySelector('#avatar-file-input');
     const changeAvatarBtn = container.querySelector('#btn-change-avatar');

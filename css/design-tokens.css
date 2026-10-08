@@ -70,6 +70,7 @@
   --transition-fast: 0.15s cubic-bezier(0.4, 0, 0.2, 1);
   --transition-normal: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   --transition-spring: 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  --transition-theme: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
   
   /* Nav height */
   --bottom-nav-height: 68px;
@@ -78,18 +79,52 @@
 }
 
 [data-theme="dark"] {
+  /* Surfaces & Backgrounds */
   --bg-app: #090d16;
   --bg-card: #111827;
   --bg-card-muted: #1e293b;
-  --bg-glass: rgba(17, 24, 39, 0.88);
+  --bg-glass: rgba(15, 23, 42, 0.88);
   --bg-glass-card: rgba(17, 24, 39, 0.95);
   --bg-glass-border: rgba(51, 65, 85, 0.6);
   
+  /* Brand Adjustments for Dark Mode */
+  --brand-primary: #3b82f6;
+  --brand-primary-hover: #60a5fa;
+  --brand-primary-light: rgba(59, 130, 246, 0.15);
+  --brand-primary-glow: rgba(59, 130, 246, 0.4);
+  
+  --brand-accent: #fbbf24;
+  --brand-accent-hover: #f59e0b;
+  --brand-accent-light: rgba(245, 158, 11, 0.15);
+  
+  /* Status Colors & Backgrounds in Dark Mode */
+  --status-searching: #60a5fa;
+  --status-searching-bg: rgba(59, 130, 246, 0.18);
+  --status-review: #a78bfa;
+  --status-review-bg: rgba(139, 92, 246, 0.18);
+  --status-match: #fbbf24;
+  --status-match-bg: rgba(245, 158, 11, 0.18);
+  --status-verified: #22d3ee;
+  --status-verified-bg: rgba(6, 182, 212, 0.18);
+  --status-recovered: #34d399;
+  --status-recovered-bg: rgba(16, 185, 129, 0.18);
+  --status-resolved: #34d399;
+  --status-resolved-bg: rgba(16, 185, 129, 0.18);
+  --status-danger: #f87171;
+  --status-danger-bg: rgba(239, 68, 68, 0.18);
+  
+  /* Typography */
   --text-primary: #f8fafc;
   --text-secondary: #cbd5e1;
   --text-muted: #64748b;
+  --text-inverse: #090d16;
   
-  --border-light: #1e293b;
-  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
-  --shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.5);
+  /* Borders & Shadows */
+  --border-light: #243247;
+  --border-focus: #60a5fa;
+  --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.5);
+  --shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.6);
+  --shadow-xl: 0 20px 30px rgba(0, 0, 0, 0.7);
+  --shadow-glow: 0 0 24px rgba(59, 130, 246, 0.35);
 }

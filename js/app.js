@@ -1,7 +1,7 @@
 /**
  * SAVIOUR — Main Application Controller & Router
  */
-
+import { firebaseApp, firestore } from '../src/firebase/firebase-config.js';
 import { auth } from './auth/auth-service.js';
 import { notificationService } from './services/notification-service.js';
 import { WelcomeAuthView } from './views/welcome-auth-view.js';
@@ -18,10 +18,11 @@ import { AdminSettingsView } from './views/admin-settings-view.js';
 class SaviourApp {
   constructor() {
     this.activeTab = 'home';
-    this.currentTheme = localStorage.getItem('saviour_theme') || 'light';
+    const saved = localStorage.getItem('saviour_theme');
+    const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+    this.currentTheme = saved || (prefersDark ? 'dark' : 'light');
     this.initElements();
     this.initTheme();
-    this.initClock();
     this.initRouter();
   }
 
@@ -33,22 +34,13 @@ class SaviourApp {
     this.timeDisplay = document.getElementById('status-time-display');
     this.notifDot = document.getElementById('header-notif-dot');
     this.themeToggleBtn = document.getElementById('btn-toggle-theme');
-    this.deviceToggleBtn = document.getElementById('btn-toggle-device-view');
   }
 
   initTheme() {
     document.documentElement.setAttribute('data-theme', this.currentTheme);
+    this.updateThemeControls();
     if (this.themeToggleBtn) {
-      this.themeToggleBtn.innerHTML = this.currentTheme === 'dark' ? '☀️' : '🌙';
       this.themeToggleBtn.onclick = () => this.toggleTheme();
-    }
-    if (this.deviceToggleBtn) {
-      this.deviceToggleBtn.onclick = () => {
-        this.mobileWrapper.classList.toggle('expanded-mode');
-        this.deviceToggleBtn.textContent = this.mobileWrapper.classList.contains('expanded-mode') 
-          ? '📱 Switch to Phone Frame' 
-          : '💻 Switch to Wide View';
-      };
     }
   }
 
@@ -56,26 +48,28 @@ class SaviourApp {
     this.currentTheme = this.currentTheme === 'dark' ? 'light' : 'dark';
     document.documentElement.setAttribute('data-theme', this.currentTheme);
     localStorage.setItem('saviour_theme', this.currentTheme);
+    this.updateThemeControls();
+    this.toast(this.currentTheme === 'dark' ? '🌙 Night mode activated' : '☀️ Day mode activated', 'info');
+  }
+
+  updateThemeControls() {
+    const isDark = this.currentTheme === 'dark';
     if (this.themeToggleBtn) {
-      this.themeToggleBtn.innerHTML = this.currentTheme === 'dark' ? '☀️' : '🌙';
+      this.themeToggleBtn.innerHTML = isDark ? '☀️' : '🌙';
+      this.themeToggleBtn.title = isDark ? 'Switch to Day Mode' : 'Switch to Night Mode';
     }
+    document.querySelectorAll('.theme-toggle-checkbox').forEach(input => {
+      input.checked = isDark;
+    });
+    document.querySelectorAll('.theme-current-label').forEach(label => {
+      label.textContent = isDark ? 'Night Mode (Dark)' : 'Day Mode (Light)';
+    });
+    document.querySelectorAll('.welcome-theme-toggle').forEach(btn => {
+      btn.innerHTML = isDark ? '☀️ Day Mode' : '🌙 Night Mode';
+    });
   }
 
-  initClock() {
-    const updateTime = () => {
-      const now = new Date();
-      let hours = now.getHours();
-      let minutes = now.getMinutes();
-      const ampm = hours >= 12 ? 'PM' : 'AM';
-      hours = hours % 12;
-      hours = hours ? hours : 12;
-      const strTime = `${hours}:${minutes < 10 ? '0' + minutes : minutes} ${ampm}`;
-      if (this.timeDisplay) this.timeDisplay.textContent = strTime;
-    };
-    updateTime();
-    setInterval(updateTime, 30000);
-  }
-
+   
   initRouter() {
     // Header notification click
     const notifBtn = document.getElementById('btn-header-notifications');
@@ -116,6 +110,7 @@ class SaviourApp {
       this.renderStudentNavigation();
       this.renderStudentTab(this.activeTab);
     } else if (auth.isAdmin()) {
+	this.activeTab = this.activeTab === 'home' ? 'dashboard' : this.activeTab;
       this.renderAdminNavigation();
       this.renderAdminTab(this.activeTab);
     }

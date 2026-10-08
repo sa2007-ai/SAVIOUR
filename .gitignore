@@ -1,5 +1,3 @@
-# ── SAVIOUR — .gitignore ────────────────────────────────────────────
-
 # OS generated files
 .DS_Store
 .DS_Store?
@@ -21,16 +19,21 @@ desktop.ini
 *.swo
 *~
 
-# Node (if ever added)
+# Node
 node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-package-lock.json
-yarn.lock
 dist/
 build/
 .cache/
+
+# Capacitor / Android generated files
+android/.gradle/
+android/build/
+android/app/build/
+android/.idea/
+android/local.properties
 
 # Environment / secrets
 .env

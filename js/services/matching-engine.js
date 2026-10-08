@@ -8,7 +8,7 @@ import { db } from '../db/storage-engine.js';
 import { DB_STORES, REPORT_TYPES, REPORT_STATUS } from '../db/schema.js';
 
 class MatchingEngine {
-  // Tokenize string and remove common stop words
+  // Tokenize string, normalize plurals, and remove common stop words
   tokenize(text) {
     if (!text) return [];
     const stopWords = new Set(['a', 'an', 'the', 'and', 'or', 'in', 'on', 'at', 'with', 'by', 'is', 'it', 'for', 'to', 'from', 'of']);
@@ -16,7 +16,8 @@ class MatchingEngine {
       .toLowerCase()
       .replace(/[^a-z0-9\s]/g, ' ')
       .split(/\s+/)
-      .filter(token => token.length > 1 && !stopWords.has(token));
+      .filter(token => token.length > 1 && !stopWords.has(token))
+      .map(token => (token.endsWith('s') && token.length > 3) ? token.slice(0, -1) : token);
   }
 
   // Calculate Jaccard similarity between two token sets
@@ -27,21 +28,22 @@ class MatchingEngine {
     if (tokensA.size === 0 && tokensB.size === 0) return 0;
     if (tokensA.size === 0 || tokensB.size === 0) return 0;
 
-    let intersectionCount = 0;
+    let matchCount = 0;
+    const arrayB = Array.from(tokensB);
+
     tokensA.forEach(token => {
-      if (tokensB.has(token)) intersectionCount++;
-      // Check partial substring match for model numbers or typos
-      else {
-        tokensB.forEach(tB => {
-          if (token.length > 3 && tB.length > 3 && (token.includes(tB) || tB.includes(token))) {
-            intersectionCount += 0.5;
-          }
-        });
+      if (tokensB.has(token)) {
+        matchCount += 1;
+      } else {
+        const partialMatch = arrayB.some(tB => 
+          (token.length >= 3 && tB.length >= 3) && (token.includes(tB) || tB.includes(token))
+        );
+        if (partialMatch) matchCount += 0.8;
       }
     });
 
-    const unionCount = tokensA.size + tokensB.size - Math.min(intersectionCount, tokensA.size);
-    return Math.min(1, intersectionCount / Math.max(1, unionCount));
+    const unionCount = Math.max(tokensA.size, tokensB.size);
+    return Math.min(1, matchCount / unionCount);
   }
 
   // Calculate Date proximity factor (decay within 14 days)

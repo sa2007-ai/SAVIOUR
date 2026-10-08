@@ -82,7 +82,24 @@ export class AdminSettingsView {
           </form>
         </div>
 
-        <!-- 3. Account Password & Reset Options -->
+        <!-- 3. Appearance & Theme Settings -->
+        <div class="theme-switch-card">
+          <div class="theme-switch-info">
+            <div class="theme-switch-icon" id="admin-theme-icon-indicator">
+              ${this.app.currentTheme === 'dark' ? '🌙' : '☀️'}
+            </div>
+            <div>
+              <div class="theme-switch-label">Display & Appearance</div>
+              <div class="theme-switch-sub theme-current-label">${this.app.currentTheme === 'dark' ? 'Night Mode (Dark)' : 'Day Mode (Light)'}</div>
+            </div>
+          </div>
+          <label class="switch-toggle" title="Toggle Night / Day Mode">
+            <input type="checkbox" id="admin-theme-toggle" class="theme-toggle-checkbox" ${this.app.currentTheme === 'dark' ? 'checked' : ''}>
+            <span class="switch-slider"></span>
+          </label>
+        </div>
+
+        <!-- 4. Account Password & Reset Options -->
         <div class="card" style="padding: 18px; margin-bottom: 20px;">
           <h4 style="font-size: 13.5px; font-weight: 700; color: var(--text-primary); margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.4px;">
             Administrator Security
@@ -123,6 +140,18 @@ export class AdminSettingsView {
     const sliderDisplay = container.querySelector('#threshold-val-display');
     const settingsForm = container.querySelector('#system-settings-form');
     const passForm = container.querySelector('#admin-password-form');
+    const themeToggle = container.querySelector('#admin-theme-toggle');
+    const themeIcon = container.querySelector('#admin-theme-icon-indicator');
+    const themeLabel = container.querySelector('.theme-current-label');
+
+    if (themeToggle) {
+      themeToggle.onchange = () => {
+        this.app.toggleTheme();
+        const isDark = this.app.currentTheme === 'dark';
+        if (themeIcon) themeIcon.textContent = isDark ? '🌙' : '☀️';
+        if (themeLabel) themeLabel.textContent = isDark ? 'Night Mode (Dark)' : 'Day Mode (Light)';
+      };
+    }
 
     slider.oninput = (e) => {
       sliderDisplay.textContent = `${e.target.value}%`;

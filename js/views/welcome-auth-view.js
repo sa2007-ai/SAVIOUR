@@ -14,9 +14,15 @@ export class WelcomeAuthView {
   }
 
   render(container) {
+    const isDark = this.app.currentTheme === 'dark';
     container.innerHTML = `
-      <div class="welcome-auth-screen" style="padding: 24px 20px; min-height: 100%; display: flex; flex-direction: column; justify-content: space-between;">
+      <div class="welcome-auth-screen" style="padding: 24px 20px; min-height: 100%; display: flex; flex-direction: column; justify-content: space-between; position: relative;">
         
+        <!-- Floating Night/Day Mode Toggle -->
+        <button id="btn-welcome-theme" class="welcome-theme-toggle" type="button" title="Toggle Night / Day Mode">
+          ${isDark ? '☀️ Day Mode' : '🌙 Night Mode'}
+        </button>
+
         <!-- Brand Header Section -->
         <div style="text-align: center; margin-top: 10px;">
           <div style="width: 84px; height: 84px; margin: 0 auto 14px; position: relative;" class="animate-float">
@@ -41,7 +47,7 @@ export class WelcomeAuthView {
           </div>
           
           <!-- Role Rule Notice -->
-          <div id="role-rule-notice" style="margin-top: 8px; text-align: center; font-size: 11.5px; color: var(--text-secondary); background: ${this.activeRole === ROLES.STUDENT ? '#eff6ff' : '#fef3c7'}; padding: 6px 12px; border-radius: var(--radius-sm); border: 1px dashed ${this.activeRole === ROLES.STUDENT ? '#93c5fd' : '#fde68a'};">
+          <div id="role-rule-notice" style="margin-top: 8px; text-align: center; font-size: 11.5px; color: var(--text-secondary); background: ${this.activeRole === ROLES.STUDENT ? 'var(--brand-primary-light)' : 'var(--brand-accent-light)'}; padding: 6px 12px; border-radius: var(--radius-sm); border: 1px dashed ${this.activeRole === ROLES.STUDENT ? 'var(--brand-primary)' : 'var(--brand-accent)'};">
             ${this.activeRole === ROLES.STUDENT 
               ? '📌 <strong>Student Rule:</strong> Email address must start with <strong>2</strong> (e.g. 21cse042@college.edu)' 
               : '🔑 <strong>Admin Rule:</strong> Official email must start with <strong>3</strong> (e.g. 3001admin@college.edu)'}
@@ -95,19 +101,7 @@ export class WelcomeAuthView {
             </button>
           </form>
 
-          <!-- Demo Quick Logins for Instant Evaluation -->
-          <div style="margin-top: 16px; padding-top: 12px; border-top: 1px dashed var(--border-light); text-align: center;">
-            <p style="font-size: 11px; color: var(--text-muted); margin-bottom: 6px;">⚡ Quick Demo One-Click Login:</p>
-            <div style="display: flex; gap: 8px; justify-content: center;">
-              <button id="quick-student-login" class="btn btn-sm btn-secondary" style="font-size: 11px; padding: 5px 10px;">
-                Demo Student (21cse042)
-              </button>
-              <button id="quick-admin-login" class="btn btn-sm btn-secondary" style="font-size: 11px; padding: 5px 10px;">
-                Demo Admin (3001admin)
-              </button>
-            </div>
-          </div>
-
+         
         </div>
 
         <!-- Footer Caption -->
@@ -133,6 +127,14 @@ export class WelcomeAuthView {
     const emailErrorText = container.querySelector('#email-error-text');
     const passwordInput = container.querySelector('#auth-password');
     const togglePassBtn = container.querySelector('#toggle-password-btn');
+    const welcomeThemeBtn = container.querySelector('#btn-welcome-theme');
+
+    if (welcomeThemeBtn) {
+      welcomeThemeBtn.onclick = () => {
+        this.app.toggleTheme();
+        welcomeThemeBtn.innerHTML = this.app.currentTheme === 'dark' ? '☀️ Day Mode' : '🌙 Night Mode';
+      };
+    }
 
     studentBtn.onclick = () => {
       this.activeRole = ROLES.STUDENT;
@@ -210,14 +212,14 @@ export class WelcomeAuthView {
       try {
         if (this.authMode === 'login') {
           await auth.login({ email, password, expectedRole: this.activeRole });
-          this.app.toast(`Welcome back, ${auth.getCurrentUser().name}!`, 'success');
+          this.app.toast('Welcome back, ' + auth.getCurrentUser().name + '!', 'success');
         } else {
           if (this.activeRole === ROLES.STUDENT) {
             await auth.registerStudent({ name, email, password });
           } else {
             await auth.registerAdmin({ name, email, password });
           }
-          this.app.toast(`Account created successfully!`, 'success');
+          this.app.toast('Account created successfully!', 'success');
         }
         this.app.onAuthSuccess();
       } catch (err) {
@@ -225,37 +227,8 @@ export class WelcomeAuthView {
       }
     };
 
-    // Quick demo buttons
-    container.querySelector('#quick-student-login').onclick = async () => {
-      emailInput.value = '21cse042@college.edu';
-      passwordInput.value = 'student123';
-      this.activeRole = ROLES.STUDENT;
-      studentBtn.click();
-      setTimeout(async () => {
-        try {
-          await auth.login({ email: '21cse042@college.edu', password: 'password', expectedRole: ROLES.STUDENT });
-          this.app.toast(`Logged in as Student Aarav Sharma`, 'success');
-          this.app.onAuthSuccess();
-        } catch (e) {
-          this.app.toast(e.message, 'error');
-        }
-      }, 50);
-    };
+   
 
-    container.querySelector('#quick-admin-login').onclick = async () => {
-      emailInput.value = '3001admin@college.edu';
-      passwordInput.value = 'admin123';
-      this.activeRole = ROLES.ADMIN;
-      adminBtn.click();
-      setTimeout(async () => {
-        try {
-          await auth.login({ email: '3001admin@college.edu', password: 'password', expectedRole: ROLES.ADMIN });
-          this.app.toast(`Logged in as Admin Dr. Ramesh Kumar`, 'success');
-          this.app.onAuthSuccess();
-        } catch (e) {
-          this.app.toast(e.message, 'error');
-        }
-      }, 50);
-    };
+
   }
 }

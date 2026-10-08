@@ -1,69 +1,84 @@
-/**
- * Authentication Service for SAVIOUR Platform
- * Enforces email prefix rules (Student '2...', Admin '3...'), secure password hashing, and session management.
- */
+import {
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  signOut,
+  onAuthStateChanged,
+  updatePassword
+} from "../../src/firebase/auth-service.js";
 
-import { db } from '../db/storage-engine.js';
-import { DB_STORES, ROLES } from '../db/schema.js';
+import {
+  doc,
+  getDoc,
+  setDoc,
+  updateDoc,
+  serverTimestamp
+} from "firebase/firestore";
+
+import { firebaseAuth } from "../../src/firebase/auth-service.js";
+import { firestore } from "../../src/firebase/firebase-config.js";
+
+const STUDENT_ROLE = "STUDENT";
+const ADMIN_ROLE = "ADMIN";
 
 class AuthService {
   constructor() {
-    this.sessionKey = 'saviour_active_session';
     this.currentUser = null;
-    this.restoreSession();
-  }
+    this.firebaseReady = false;
 
-  // SHA-256 Hash with salt for secure password storage
-  async hashPassword(password, salt = 'saviour_salt_campus_2026') {
-    const encoder = new TextEncoder();
-    const data = encoder.encode(password + salt);
-    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-    const hashArray = Array.from(new Uint8Array(hashBuffer));
-    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-  }
-
-  // Validate student email rule: MUST begin with '2'
-  validateStudentEmail(email) {
-    if (!email || typeof email !== 'string') return false;
-    const trimmed = email.trim();
-    return /^2[a-zA-Z0-9._%+-]*@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(trimmed);
-  }
-
-  // Validate admin email rule: MUST begin with '3'
-  validateAdminEmail(email) {
-    if (!email || typeof email !== 'string') return false;
-    const trimmed = email.trim();
-    return /^3[a-zA-Z0-9._%+-]*@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(trimmed);
-  }
-
-  restoreSession() {
-    try {
-      const session = localStorage.getItem(this.sessionKey);
-      if (session) {
-        this.currentUser = JSON.parse(session);
+    onAuthStateChanged(firebaseAuth, async (firebaseUser) => {
+      if (!firebaseUser) {
+        this.currentUser = null;
+        this.firebaseReady = true;
+        return;
       }
-    } catch (e) {
-      this.currentUser = null;
-    }
+
+      try {
+        const userDoc = await getDoc(
+          doc(firestore, "users", firebaseUser.uid)
+        );
+
+        if (userDoc.exists()) {
+          const data = userDoc.data();
+
+          this.currentUser = {
+            id: firebaseUser.uid,
+            name: data.name || firebaseUser.displayName || "",
+            email: firebaseUser.email || data.email || "",
+            role: data.role || STUDENT_ROLE,
+            profileImage: data.profileImage || "",
+            createdAt: data.createdAt || null
+          };
+        } else {
+          this.currentUser = {
+            id: firebaseUser.uid,
+            name: firebaseUser.displayName || "",
+            email: firebaseUser.email || "",
+            role: STUDENT_ROLE,
+            profileImage: "",
+            createdAt: null
+          };
+        }
+      } catch (error) {
+        console.error("Failed to load Firebase user profile:", error);
+        this.currentUser = null;
+      }
+
+      this.firebaseReady = true;
+    });
   }
 
-  saveSession(user) {
-    // Never store passwordHash in active session
-    const safeUser = {
-      id: user.id,
-      name: user.name,
-      email: user.email,
-      role: user.role,
-      profileImage: user.profileImage || '',
-      createdAt: user.createdAt
-    };
-    this.currentUser = safeUser;
-    localStorage.setItem(this.sessionKey, JSON.stringify(safeUser));
+  validateStudentEmail(email) {
+    if (!email || typeof email !== "string") return false;
+
+    return /^2[a-zA-Z0-9._%+-]*@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/
+      .test(email.trim());
   }
 
-  clearSession() {
-    this.currentUser = null;
-    localStorage.removeItem(this.sessionKey);
+  validateAdminEmail(email) {
+    if (!email || typeof email !== "string") return false;
+
+    return /^3[a-zA-Z0-9._%+-]*@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/
+      .test(email.trim());
   }
 
   getCurrentUser() {
@@ -75,146 +90,281 @@ class AuthService {
   }
 
   isAdmin() {
-    return this.currentUser && this.currentUser.role === ROLES.ADMIN;
+    return this.currentUser?.role === ADMIN_ROLE;
   }
 
   isStudent() {
-    return this.currentUser && this.currentUser.role === ROLES.STUDENT;
+    return this.currentUser?.role === STUDENT_ROLE;
   }
 
-  // Student Registration
   async registerStudent({ name, email, password }) {
     if (!name || name.trim().length < 2) {
-      throw new Error('Please enter your full name.');
+      throw new Error("Please enter your full name.");
     }
+
     if (!this.validateStudentEmail(email)) {
-      throw new Error('Student email must start with the digit "2" (e.g. 21student@college.edu).');
+      throw new Error(
+        'Student email must start with the digit "2" (e.g. 21student@college.edu).'
+      );
     }
+
     if (!password || password.length < 6) {
-      throw new Error('Password must be at least 6 characters.');
+      throw new Error("Password must be at least 6 characters.");
     }
-
-    const users = await db.getAll(DB_STORES.USERS);
-    const existing = users.find(u => u.email.toLowerCase() === email.trim().toLowerCase());
-    if (existing) {
-      throw new Error('An account with this student email already exists.');
-    }
-
-    const passwordHash = await this.hashPassword(password);
-    const newUser = await db.create(DB_STORES.USERS, {
-      name: name.trim(),
-      email: email.trim().toLowerCase(),
-      passwordHash,
-      role: ROLES.STUDENT,
-      profileImage: `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(name.trim())}`
-    });
-
-    this.saveSession(newUser);
-    return this.currentUser;
-  }
-
-  // Admin Registration
-  async registerAdmin({ name, email, password }) {
-    if (!name || name.trim().length < 2) {
-      throw new Error('Please enter administrator name.');
-    }
-    if (!this.validateAdminEmail(email)) {
-      throw new Error('Admin official email must start with the digit "3" (e.g. 3001admin@college.edu).');
-    }
-    if (!password || password.length < 6) {
-      throw new Error('Admin password must be at least 6 characters.');
-    }
-
-    const users = await db.getAll(DB_STORES.USERS);
-    const existing = users.find(u => u.email.toLowerCase() === email.trim().toLowerCase());
-    if (existing) {
-      throw new Error('An account with this administrator email already exists.');
-    }
-
-    const passwordHash = await this.hashPassword(password);
-    const newUser = await db.create(DB_STORES.USERS, {
-      name: name.trim(),
-      email: email.trim().toLowerCase(),
-      passwordHash,
-      role: ROLES.ADMIN,
-      profileImage: `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(name.trim())}`
-    });
-
-    this.saveSession(newUser);
-    return this.currentUser;
-  }
-
-  // Login (Dual Role Support)
-  async login({ email, password, expectedRole }) {
-    if (!email) throw new Error('Please enter your email address.');
-    if (!password) throw new Error('Please enter your password.');
 
     const cleanEmail = email.trim().toLowerCase();
 
-    // Check prefix rules strictly based on role
-    if (expectedRole === ROLES.STUDENT) {
-      if (!cleanEmail.startsWith('2')) {
-        throw new Error('Student email addresses must start with the digit "2".');
+    try {
+      const credential = await createUserWithEmailAndPassword(
+        firebaseAuth,
+        cleanEmail,
+        password
+      );
+
+      const user = credential.user;
+
+      const profile = {
+        name: name.trim(),
+        email: cleanEmail,
+        role: STUDENT_ROLE,
+        profileImage: `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(name.trim())}`,
+        createdAt: serverTimestamp()
+      };
+
+      await setDoc(doc(firestore, "users", user.uid), profile);
+
+      this.currentUser = {
+        id: user.uid,
+        name: profile.name,
+        email: profile.email,
+        role: profile.role,
+        profileImage: profile.profileImage,
+        createdAt: profile.createdAt
+      };
+
+      return this.currentUser;
+    } catch (error) {
+      console.error("Student registration failed:", error);
+
+      if (error.code === "auth/email-already-in-use") {
+        throw new Error("An account with this student email already exists.");
       }
-    } else if (expectedRole === ROLES.ADMIN) {
-      if (!cleanEmail.startsWith('3')) {
-        throw new Error('Administrator email addresses must start with the digit "3".');
+
+      if (error.code === "auth/invalid-email") {
+        throw new Error("Please enter a valid email address.");
       }
+
+      if (error.code === "auth/weak-password") {
+        throw new Error("Password must be at least 6 characters.");
+      }
+
+      throw new Error(error.message || "Student registration failed.");
+    }
+  }
+
+  async registerAdmin({ name, email, password }) {
+    if (!name || name.trim().length < 2) {
+      throw new Error("Please enter administrator name.");
     }
 
-    const users = await db.getAll(DB_STORES.USERS);
-    const user = users.find(u => u.email.toLowerCase() === cleanEmail);
-
-    if (!user) {
-      throw new Error('Invalid email or password. Please check your credentials.');
+    if (!this.validateAdminEmail(email)) {
+      throw new Error(
+        'Admin official email must start with the digit "3" (e.g. 3001admin@college.edu).'
+      );
     }
 
-    // Role check
-    if (expectedRole && user.role !== expectedRole) {
-      throw new Error(`This account is not registered as an ${expectedRole}.`);
+    if (!password || password.length < 6) {
+      throw new Error("Admin password must be at least 6 characters.");
     }
 
-    const passwordHash = await this.hashPassword(password);
-    // Allow demo seed users password matching
-    if (user.passwordHash !== passwordHash && user.passwordHash !== 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855') {
-      throw new Error('Invalid email or password.');
+    const cleanEmail = email.trim().toLowerCase();
+
+    try {
+      const credential = await createUserWithEmailAndPassword(
+        firebaseAuth,
+        cleanEmail,
+        password
+      );
+
+      const user = credential.user;
+
+      const profile = {
+        name: name.trim(),
+        email: cleanEmail,
+        role: ADMIN_ROLE,
+        profileImage: `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(name.trim())}`,
+        createdAt: serverTimestamp()
+      };
+
+      await setDoc(doc(firestore, "users", user.uid), profile);
+
+      this.currentUser = {
+        id: user.uid,
+        name: profile.name,
+        email: profile.email,
+        role: profile.role,
+        profileImage: profile.profileImage,
+        createdAt: profile.createdAt
+      };
+
+      return this.currentUser;
+    } catch (error) {
+      console.error("Admin registration failed:", error);
+
+      if (error.code === "auth/email-already-in-use") {
+        throw new Error("An account with this administrator email already exists.");
+      }
+
+      if (error.code === "auth/invalid-email") {
+        throw new Error("Please enter a valid email address.");
+      }
+
+      if (error.code === "auth/weak-password") {
+        throw new Error("Password must be at least 6 characters.");
+      }
+
+      throw new Error(error.message || "Admin registration failed.");
+    }
+  }
+
+  async login({ email, password, expectedRole }) {
+    if (!email) {
+      throw new Error("Please enter your email address.");
     }
 
-    this.saveSession(user);
+    if (!password) {
+      throw new Error("Please enter your password.");
+    }
+
+    const cleanEmail = email.trim().toLowerCase();
+
+    if (expectedRole === STUDENT_ROLE && !cleanEmail.startsWith("2")) {
+      throw new Error('Student email addresses must start with the digit "2".');
+    }
+
+    if (expectedRole === ADMIN_ROLE && !cleanEmail.startsWith("3")) {
+      throw new Error(
+        'Administrator email addresses must start with the digit "3".'
+      );
+    }
+
+    try {
+      const credential = await signInWithEmailAndPassword(
+        firebaseAuth,
+        cleanEmail,
+        password
+      );
+
+      const user = credential.user;
+
+      const userDoc = await getDoc(
+        doc(firestore, "users", user.uid)
+      );
+
+      if (!userDoc.exists()) {
+        await signOut(firebaseAuth);
+        throw new Error(
+          "User profile was not found in the database."
+        );
+      }
+
+      const data = userDoc.data();
+
+      if (expectedRole && data.role !== expectedRole) {
+        await signOut(firebaseAuth);
+        throw new Error(
+          `This account is not registered as an ${expectedRole}.`
+        );
+      }
+
+      this.currentUser = {
+        id: user.uid,
+        name: data.name || "",
+        email: user.email || data.email || "",
+        role: data.role,
+        profileImage: data.profileImage || "",
+        createdAt: data.createdAt || null
+      };
+
+      return this.currentUser;
+    } catch (error) {
+      console.error("Login failed:", error);
+
+      if (
+        error.message &&
+        (
+          error.message.includes("not registered") ||
+          error.message.includes("profile was not found")
+        )
+      ) {
+        throw error;
+      }
+
+      if (
+        error.code === "auth/invalid-credential" ||
+        error.code === "auth/user-not-found" ||
+        error.code === "auth/wrong-password"
+      ) {
+        throw new Error("Invalid email or password.");
+      }
+
+      if (error.code === "auth/invalid-email") {
+        throw new Error("Please enter a valid email address.");
+      }
+
+      throw new Error(error.message || "Login failed.");
+    }
+  }
+
+  async changePassword(userId, currentPassword, newPassword) {
+    if (!newPassword || newPassword.length < 6) {
+      throw new Error("New password must be at least 6 characters.");
+    }
+
+    const user = firebaseAuth.currentUser;
+
+    if (!user || user.uid !== userId) {
+      throw new Error("You must be logged in to change your password.");
+    }
+
+    try {
+      await updatePassword(user, newPassword);
+      return true;
+    } catch (error) {
+      console.error("Password change failed:", error);
+
+      if (error.code === "auth/requires-recent-login") {
+        throw new Error(
+          "For security, please log in again before changing your password."
+        );
+      }
+
+      throw new Error(error.message || "Unable to change password.");
+    }
+  }
+
+  async updateProfileImage(userId, imageUrl) {
+    if (!userId) {
+      throw new Error("User ID is required.");
+    }
+
+    await updateDoc(
+      doc(firestore, "users", userId),
+      {
+        profileImage: imageUrl || ""
+      }
+    );
+
+    if (this.currentUser && this.currentUser.id === userId) {
+      this.currentUser.profileImage = imageUrl || "";
+    }
+
     return this.currentUser;
   }
 
-  // Change Password
-  async changePassword(userId, currentPassword, newPassword) {
-    if (!newPassword || newPassword.length < 6) {
-      throw new Error('New password must be at least 6 characters.');
-    }
-
-    const user = await db.getById(DB_STORES.USERS, userId);
-    if (!user) throw new Error('User not found.');
-
-    const currentHash = await this.hashPassword(currentPassword);
-    if (user.passwordHash !== currentHash && user.passwordHash !== 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855') {
-      throw new Error('Current password is incorrect.');
-    }
-
-    const newHash = await this.hashPassword(newPassword);
-    await db.update(DB_STORES.USERS, userId, { passwordHash: newHash });
-    return true;
-  }
-
-  // Update Profile Image
-  async updateProfileImage(userId, imageUrl) {
-    const updated = await db.update(DB_STORES.USERS, userId, { profileImage: imageUrl });
-    if (this.currentUser && this.currentUser.id === userId) {
-      this.currentUser.profileImage = imageUrl;
-      this.saveSession(this.currentUser);
-    }
-    return updated;
-  }
-
-  logout() {
-    this.clearSession();
+  async logout() {
+    await signOut(firebaseAuth);
+    this.currentUser = null;
   }
 }
 
